@@ -1,0 +1,95 @@
+# ============================================================
+# Smart File Processor · 开发环境中间件
+# ============================================================
+# 启动: docker compose up -d
+# 停止: docker compose down
+# 清理(含数据): docker compose down -v
+#
+# 前置条件:
+#   - Docker Engine 20.10+
+#   - Linux/macOS: 建议设置 vm.max_map_count=262144 (ES 要求)
+#     sudo sysctl -w vm.max_map_count=262144
+#     echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+#   - Windows: WSL2 中默认已满足
+# ============================================================
+
+services:
+  # ==================== MySQL 8.0 ====================
+  mysql:
+    image: mysql:8.0
+    container_name: sfp-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: file_processor
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - sfp-net
+
+  # ==================== RabbitMQ 3.13 ====================
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: sfp-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"      # AMQP
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - sfp-net
+
+  # ==================== Elasticsearch 8.12 ====================
+  elasticsearch:
+    image: elasticsearch:8.12.0
+    container_name: sfp-elasticsearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "${ES_PORT:-9200}:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -Eq 'green|yellow'"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
+    networks:
+      - sfp-net
+
+volumes:
+  mysql_data:
+    name: sfp-mysql-data
+  rabbitmq_data:
+    name: sfp-rabbitmq-data
+  es_data:
+    name: sfp-es-data
+
+networks:
+  sfp-net:
+    name: sfp-net
+    driver: bridge

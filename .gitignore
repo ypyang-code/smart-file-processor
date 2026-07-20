@@ -37,3 +37,25 @@ out/
 .vscode/
 
 uploads/
+logs/
+*.log
+*.tmp
+temp/
+tmp/
+
+### Environment & Secrets ###
+.env
+.env.local
+.env.*.local
+application-local.yml
+
+### OS Files ###
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+### JMeter ###
+jmeter/results/
+jmeter/logs/

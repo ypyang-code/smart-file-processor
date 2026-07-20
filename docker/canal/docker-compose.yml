@@ -1,0 +1,38 @@
+# ============================================================
+# Smart File Processor · Canal Server Docker Compose
+# 用途: Phase 3 闭环 2 — Canal 环境搭建与 binlog 验证
+# 创建时间: 2026-07-15
+# ============================================================
+#
+# 启动:  docker compose -f docker/canal/docker-compose.yml up -d
+# 停止:  docker compose -f docker/canal/docker-compose.yml down
+# 日志:  docker logs canal-server -f
+#
+# 说明:
+#   Canal Server 伪装成 MySQL Slave，订阅宿主机 MySQL 的 binlog，
+#   推送给 Canal Client (后续闭环 3 实现)。
+#   本闭环只验证 Canal Server 能连上 MySQL 并接收 binlog 事件。
+
+services:
+  canal-server:
+    image: canal/canal-server:v1.1.7
+    container_name: canal-server
+    restart: unless-stopped
+    ports:
+      - "11111:11111"   # Canal Client 连接端口
+    volumes:
+      # 挂载 instance 配置文件
+      - ./conf/example/instance.properties:/home/admin/canal-server/conf/example/instance.properties:ro
+    environment:
+      # JVM 内存限制（开发环境用 256m 即可，Canal Server 本身很轻量）
+      - JAVA_OPTS=-Xms256m -Xmx512m
+    extra_hosts:
+      # ★ Windows Docker Desktop: host.docker.internal 自动解析到宿主机 IP
+      #   如果使用 Linux Docker, 需要用 host 网络模式或配置 extra_hosts
+      - "host.docker.internal:host-gateway"
+    networks:
+      - canal-net
+
+networks:
+  canal-net:
+    driver: bridge
