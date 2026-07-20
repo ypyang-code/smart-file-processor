@@ -9,7 +9,7 @@
 
 ## 1. 30 秒电梯演讲
 
-> "Smart File Processor 是我独立开发的企业级文件处理与检索系统。它支持小文件直传和大文件分片上传（MD5 秒传、断点续传），通过 RabbitMQ 的 MANUAL ACK + DLX/DLQ + Producer Confirm 三层保障实现可靠异步处理，通过 Transactional Outbox Pattern 解决 MySQL 和 Elasticsearch 的最终一致性问题。用了 Spring Boot + MyBatis + RabbitMQ + Elasticsearch + 阿里云 OSS 这套技术栈，写了 35 个单元测试，有完整的 Docker Compose 一键部署方案和技术文档。"
+> "Smart File Processor 是我独立开发的企业级智能文件处理与全文检索系统。它支持小文件直传和大文件分片上传（MD5 秒传、断点续传），通过 RabbitMQ 的 MANUAL ACK + DLX/DLQ + Producer Confirm 三层保障实现可靠异步处理，通过 Transactional Outbox Pattern 解决 MySQL 和 Elasticsearch 的最终一致性问题。用了 Spring Boot + MyBatis + RabbitMQ + Elasticsearch + 阿里云 OSS 这套技术栈，写了 55 个单元测试，有完整的 Docker Compose 一键部署方案和技术文档。"
 
 **关键点**：
 - "独立开发" → 体现自主性
@@ -83,7 +83,7 @@
 - **索引策略**：`multiMatch` 同时搜索 `fileName` 和 `content` 字段
 - **查询链路**：ES 返回匹配的 fileId → 回查 MySQL 获取完整 FileInfo
 - **为什么回查 MySQL**：ES 中只存搜索用的字段，完整元数据在 MySQL 中，保证单一数据源
-- **已知不足**：当前 N+1 查询（每个 ES 命中逐条回查 MySQL），Phase 4 Canal 改造后一并优化为批量查询
+- **已知不足**：当前 N+1 查询（每个 ES 命中逐条回查 MySQL），后续版本计划优化为批量查询
 
 ---
 
@@ -118,17 +118,17 @@
 |------|----------|
 | "这个项目最大的不足是什么？" | 一是搜索存在 N+1 查询问题（Phase 5 做批量优化）；二是 ES 全量重建索引接口还未实现；三是没有性能压测数据（Phase 5 计划）。 |
 | "如果重新设计，你会改什么？" | 第一，一开始就为 ES 同步设计 Transactional Outbox 而不是手动双写；第二，提前引入 Flyway 做数据库版本管理（现在用纯 SQL 脚本）；第三，前端拆为独立项目用 Vite 构建。 |
-| "你在项目中学到了什么？" | 最大的收获是"先跑通再优化"的工程思维。第一个版本只用了 3 天就实现全链路，然后我梳理改进点按 Phase 0→1→2→3→4→5 演进。另一个收获是**文档驱动开发**——我写了架构设计、RabbitMQ 可靠性复盘、Canal 同步设计等 10+ 篇文档，写文档的过程帮我发现了代码里很多之前没注意到的问题。 |
+| "你在项目中学到了什么？" | 最大的收获是"先跑通再优化"的工程思维。第一个版本只用了 3 天就实现全链路，然后我梳理改进点按 Phase 0→1→2→3→4→5 演进。另一个收获是**文档驱动开发**——我写了架构设计、RabbitMQ 可靠性复盘、Transactional Outbox 同步设计等 10+ 篇文档，写文档的过程帮我发现了代码里很多之前没注意到的问题。 |
 
 ---
 
 ## 5. 简历中的项目描述建议
 
 ### 项目名称
-**Smart File Processor — 企业级文件处理与检索系统**
+**Smart File Processor — 企业级智能文件处理与全文检索系统**
 
 ### 一句话简介
-独立设计并实现的企业级文档处理系统，支持小文件上传和大文件分片上传（MD5 秒传/断点续传），基于 RabbitMQ 三层可靠消息链路实现异步处理，集成 Elasticsearch 全文检索，通过 Transactional Outbox Pattern 实现 MySQL-ES 最终一致性。
+独立设计并实现的企业级智能文件处理与全文检索系统，支持小文件上传和大文件分片上传（MD5 秒传/断点续传），基于 RabbitMQ 三层可靠消息链路实现异步处理，集成 Elasticsearch 全文检索，通过 Transactional Outbox Pattern 实现 MySQL-ES 最终一致性，全链路覆盖文件内容解析的大小限制与 OOM 风险控制。
 
 ### 技术栈标签
 `Java 17` `Spring Boot 3.2` `MyBatis` `RabbitMQ` `Elasticsearch 8` `阿里云 OSS` `MySQL 8` `PDFBox` `Apache POI` `JUnit 5` `Mockito` `Docker Compose`

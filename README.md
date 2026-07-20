@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**企业级文件处理与检索系统 · Java 后端工程实践项目**
+**企业级文件处理与全文检索系统**
 
 [![Java](https://img.shields.io/badge/Java-17-orange?logo=openjdk)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.8-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
@@ -32,12 +32,19 @@
 
 ## 项目简介
 
-Smart File Processor 是一个**面向 Java 后端岗位展示的企业级文件处理与检索系统**。项目从真实业务场景出发（合同管理、知识库建设、档案数字化），逐步演进为一个展示后端工程能力的实践项目。
+企业级文件处理与全文检索系统，围绕"文件上传 → 异步解析 → 索引同步 → 全文检索"构建完整后端链路。
 
-**核心价值**：帮助面试官在 30 秒内看到你的后端工程能力 —— 从中间件选型、系统设计、消息可靠性保障、大文件处理到代码质量与测试覆盖。
+项目基于 Spring Boot 3.2 + MyBatis + RabbitMQ + Elasticsearch 实现，支持大文件分片上传、MD5 秒传、断点续传、文件内容解析、全文检索和可靠消息一致性，重点体现 Java 后端项目中的异步处理、数据一致性、异常恢复和工程化测试能力。
 
-> 💡 **当前定位**：Java 后端实习 / 平台后端 / 搜索后端 / 企业服务后端岗位展示项目。
-> AI 文档问答（RAG/LLM/SSE）为 Future Backlog，不在当前代码中实现。
+**已实现能力**
+
+- **上传链路**：MD5 秒传、分片上传（流式落盘）、断点续传、分片合并 MD5 校验
+- **异步解析**：RabbitMQ 解耦上传与处理，Producer Confirm + MANUAL ACK + Spring Retry（指数退避 3 次）+ DLX/DLQ 三层可靠消息保障
+- **全文检索**：Elasticsearch multiMatch（fileName + content），Transactional Outbox Pattern 实现 MySQL-ES 最终一致性
+- **内容解析**：PDF（PDFBox）/ DOCX（POI）/ TXT 文本提取，含文件大小、页数、段落数、字符数多层 OOM 防护
+- **工程化**：Docker Compose 一键部署中间件，55 个单元测试（JUnit 5 + Mockito），全局异常处理
+
+> 💡 **Future Backlog**：AI 文档问答（RAG/LLM/SSE）、Embedding + 向量检索等能力已列入远期规划，不在当前代码中实现。
 
 ---
 
@@ -122,19 +129,15 @@ flowchart TB
 
 ## 技术亮点
 
-| 亮点 | 说明 |
-|------|------|
-| 🚀 **异步解耦** | RabbitMQ 消息队列分离上传与处理，用户上传后立即返回，后台异步完成 OSS 上传 + 内容提取 + ES 索引 |
-| 🛡️ **消息可靠** | MANUAL ACK + Producer Confirm + DLX/DLQ + 消息持久化 + Spring Retry，3 层保障不丢消息 |
-| 📦 **大文件分片上传** | MD5 秒传、分片上传（流式落盘）、断点续传、分片合并 MD5 校验，支持 GB 级文件 |
-| ☁️ **云原生存储** | 阿里云 OSS 对象存储，客户端单例复用，应用启动时初始化、关闭时销毁 |
-| 📄 **多格式解析** | 自动提取 PDF（PDFBox）、Word（POI）、TXT 的文字内容 |
-| 🔍 **全文检索** | Elasticsearch multiMatch 查询，同时搜索文件名和文件内容 |
-| 🔄 **最终一致性** | Transactional Outbox Pattern，MySQL 事务保证 + 异步 ES 同步 + 指数退避重试 |
-| 🛡️ **OOM 防护** | PDF/DOCX/TXT 解析硬上限（文件大小 + 页数 + 段落数 + 字符截断），损坏文件安全降级 |
-| 🧪 **自动化测试** | JUnit 5 + Mockito + MockMvc，55 个测试覆盖 Controller 和核心 Service |
-| 🛡️ **全局异常处理** | @RestControllerAdvice 统一拦截，覆盖 Multipart/IO/Amqp/参数校验等异常类型 |
-| 📐 **清晰分层** | Controller → Service → Mapper 三层架构，DTO 隔离传输对象，Entity 映射数据模型 |
+| 主题 | 实现要点 | 解决的问题 |
+|------|---------|-----------|
+| **上传链路** | MD5 秒传、分片上传（流式落盘）、断点续传、分片合并 MD5 校验 | 大文件单次上传易超时、失败需全量重传 |
+| **异步解耦** | RabbitMQ 分离上传与处理，上传接口快速返回，后台异步完成 OSS 上传 + 文本提取 + ES 索引 | 同步处理用户体验差，大文件等待时间长 |
+| **可靠消息** | Producer Confirm + MANUAL ACK + Spring Retry（指数退避 3 次）+ DLX/DLQ 死信兜底 + 消息持久化 | 消息丢失、Consumer 崩溃、重试耗尽无记录 |
+| **数据一致性** | Transactional Outbox Pattern：同事务写入 outbox_event + 业务数据，定时调度异步同步 ES（幂等 upsert，失败指数退避重试最多 5 次） | MySQL 与 ES 无分布式事务支持，双写必然不一致 |
+| **全文检索** | Elasticsearch multiMatch（fileName + content），回查 MySQL 返回完整元数据 | 文件名 + 内容联合搜索，单一数据源 |
+| **解析安全** | PDF/DOCX/TXT 多层 OOM 防护（文件大小 + 页数 + 段落数 + 字符截断），损坏文件安全降级 | 大文件/恶意文件/损坏文件导致 JVM OOM |
+| **测试覆盖** | 55 个单元测试（JUnit 5 + Mockito + MockMvc standalone），覆盖上传、分片、异常处理、消息可靠性、Outbox、文件解析等核心链路 | 重构无安全网，面试展示无质量背书 |
 
 ---
 

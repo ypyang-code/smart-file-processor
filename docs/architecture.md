@@ -341,7 +341,7 @@ uploadStatus:                     parseStatus:
 | 文件解析 | PDFBox + POI | Apache 官方库，无需 License，比 Tika 更轻量 |
 | 前端 | Vue 3 CDN | 零构建成本，专注展示后端能力 |
 | 构建 | Gradle 8.5 | Spring 官方推荐，比 Maven 更简洁灵活 |
-| 测试 | JUnit 5 + Mockito + MockMvc | 25% 包覆盖率（controller + core service），standalone 模式避免加载持久层依赖 |
+| 测试 | JUnit 5 + Mockito + MockMvc | 55 个单元测试，覆盖文件上传、分片上传、全局异常处理、RabbitMQ 可靠消息、Transactional Outbox、文件内容解析等核心链路，standalone 模式避免加载持久层依赖 |
 
 ---
 
@@ -350,10 +350,10 @@ uploadStatus:                     parseStatus:
 | 问题 | 影响 | 改进计划 |
 |------|------|----------|
 | ~~ES 手动双写，无事务保证~~ | ~~MySQL/ES 数据不一致风险~~ | ✅ Phase 4 已解决（Transactional Outbox） |
-| 搜索 N+1 查询（ES → MySQL 逐条回查） | 搜索结果多时性能差 | Phase 5 批量查询优化 |
-| PDF 全量加载到内存 | 超大 PDF 可能 OOM | Phase 5 验证并优化 |
+| 搜索 N+1 查询（ES → MySQL 逐条回查） | 搜索结果多时性能差 | 后续版本计划批量查询优化 |
+| PDF 全量加载到内存 | 超大 PDF 可能 OOM | ✅ Phase 5 已通过门禁+截断解决 |
 | 无前端分片上传 UI | 大文件只能用 curl 测试 | 低优先级，后端接口已就绪 |
-| 无用户认证 | 不适合直接生产部署 | Phase 5 后补充 Spring Security + JWT |
+| 无用户认证 | 不适合直接生产部署 | 🔜 后续规划（Backlog）：Spring Security + JWT 用户认证与权限管理 |
 
 ---
 
@@ -393,7 +393,7 @@ uploadStatus:                     parseStatus:
 |------|------|:--:|
 | **Transactional Outbox MySQL → ES 数据同步** | [search-consistency.md](./search-consistency.md) | ✅ 已完成 |
 | **解析内存风险控制** | [performance-report.md](./performance-report.md) | ✅ 代码完成，性能数据待实测 |
-| **AI 文档问答（RAG）** | [refactor-plan.md](./refactor-plan.md) Phase 5 | 💡 Backlog |
+| **AI 文档问答（RAG）** | [refactor-plan.md](./refactor-plan.md) | 💡 Backlog |
 | **SSE 流式响应** | — | 💡 Backlog |
 | **LLM 接入** | — | 💡 Backlog |
 | **Embedding + Milvus 向量库** | — | 💡 Backlog |
