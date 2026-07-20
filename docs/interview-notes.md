@@ -108,9 +108,9 @@
 | "为什么做分片上传？" | 大文件（100MB+）单次 HTTP 上传容易超时和失败，且失败后需要全部重传。分片上传每片独立传输，失败只重传该片。各分片可以并发上传提高速度。 |
 | "为什么引入 RabbitMQ？" | 核心目的是上传和处理解耦。同步处理时用户要等 OSS 上传 + 文本提取 + ES 索引全完成，大文件体验很差。异步处理后上传接口 100ms 内返回，后台慢慢处理。 |
 | "如何保证消息可靠？" | 三层保障：Producer Confirm + 持久化 → MANUAL ACK + Spring Retry → DLX/DLQ。消息从发送到确认的每个环节都有失败处理机制。具体见 rabbitmq-reliability-review.md。 |
-| "MySQL 和 ES 一致性怎么解决？" | 当前是手动双写，风险在于：ES 写入失败时 Consumer 抛异常触发重试，但如果异常是 ES 返回成功后网络中断（实际写入成功但客户端以为失败），重试会导致 ES 中重复文档。Phase 4 计划用 Canal 监听 binlog 实现最终一致性——MySQL 作为单一写入源，ES 通过 binlog 异步同步。 |
+| "MySQL 和 ES 一致性怎么解决？" | Phase 4 已通过 Transactional Outbox Pattern 解决。Consumer 处理完成后，同事务写入 outbox_event + 更新 file_info。定时任务异步扫描 outbox_event 同步 ES，失败自动重试（指数退避最多 5 次）。ES 以 fileId 为 _id 做幂等 upsert。方案选型上，同步双写无分布式事务保证，Canal 需要额外运维成本，Transactional Outbox 仅依赖 MySQL 本地事务，是最轻量的方案。详见 search-consistency.md。 |
 | "为什么做全局异常处理？" | Controller 中到处 try-catch 返回 Result.error() 是重复代码，且容易遗漏异常类型。@RestControllerAdvice 统一拦截后，Controller 代码更干净，异常处理更完整（比如之前没有专门处理 MultipartException 和 AmqpException）。 |
-| "为什么做测试覆盖？" | 项目要用于求职展示，如果面试官看到只有一个 contextLoads() 测试，会觉得质量意识不够。我写了 23 个测试覆盖 Controller 和核心 Service，使用 Mockito mock 中间件依赖，不依赖真实 DB/MQ/ES 就能跑。 |
+| "为什么做测试覆盖？" | 项目要用于求职展示，如果面试官看到只有一个 contextLoads() 测试，会觉得质量意识不够。我写了 55 个测试覆盖 Controller 和核心 Service，使用 Mockito mock 中间件依赖，不依赖真实 DB/MQ/ES 就能跑。 |
 
 ### 自我认知类
 
@@ -128,7 +128,7 @@
 **Smart File Processor — 企业级文件处理与检索系统**
 
 ### 一句话简介
-独立设计并实现的企业级文档处理系统，支持小文件上传和大文件分片上传（MD5 秒传/断点续传），基于 RabbitMQ 三层可靠消息链路实现异步处理，集成 Elasticsearch 全文检索，正在推进 Canal 数据一致性同步。
+独立设计并实现的企业级文档处理系统，支持小文件上传和大文件分片上传（MD5 秒传/断点续传），基于 RabbitMQ 三层可靠消息链路实现异步处理，集成 Elasticsearch 全文检索，通过 Transactional Outbox Pattern 实现 MySQL-ES 最终一致性。
 
 ### 技术栈标签
 `Java 17` `Spring Boot 3.2` `MyBatis` `RabbitMQ` `Elasticsearch 8` `阿里云 OSS` `MySQL 8` `PDFBox` `Apache POI` `JUnit 5` `Mockito` `Docker Compose`

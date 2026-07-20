@@ -648,7 +648,7 @@ try {
 | 2 | **自动补偿重发** | 发送失败的消息靠人工排查后手动重发 | Phase 3 |
 | 3 | **Consumer 幂等消费表** | 重复消费时 OSS 文件被覆盖写、ES 文档被覆盖（浪费资源但业务结果正确） | Phase 3 |
 | 4 | **分布式事务** | MySQL 写入和 MQ 发送不是原子的 | 不做 |
-| 5 | **MySQL ↔ ES 最终一致性** | Consumer 中手动双写 MySQL + ES，无事务保证 | Phase 3（Canal） |
+| 5 | **MySQL ↔ ES 最终一致性** | Consumer 中手动双写 MySQL + ES，无事务保证 | Phase 4（Transactional Outbox）✅ |
 | 6 | **主动告警** | DLQ 堆积、Consumer 异常率上升时无法主动通知 | Phase 3/4 |
 | 7 | **死信自动重投** | 死信需人工排查根因后手动处理 | 不做 |
 
@@ -668,7 +668,7 @@ try {
 >
 > 第三步，改 Producer 端。不用默认交换机了，新建了一个业务交换机 `file.upload.exchange`，每条消息带 correlationId 发出去，格式是 `file-upload:{fileId}:{uuid8}`。加了 ConfirmCallback 确认 Broker 收到了没，加了 ReturnsCallback 在 mandatory=true 下捕获路由错误。同时把消息标记为持久化，配合 durable 的 exchange 和 queue，Broker 重启消息不丢。
 >
-> 边界也很清楚。现在没有消息发送记录表，Confirm 失败只是记日志，不自动重发。Consumer 也没有幂等消费表，重复消费目前是靠 OSS 覆盖写碰巧幂等。下一步计划引入 Canal 解决 MySQL 和 ES 的数据一致性问题，同时补上幂等消费和消息发送记录。"
+> 边界也很清楚。现在没有消息发送记录表，Confirm 失败只是记日志，不自动重发。Consumer 也没有幂等消费表，重复消费目前是靠 OSS 覆盖写碰巧幂等。MySQL 和 ES 的数据一致性问题已通过 Transactional Outbox Pattern（Phase 4）解决，后续需要补上幂等消费和消息发送记录。"
 
 ---
 
@@ -699,16 +699,18 @@ try {
 | Phase 0 | ✅ 已完成（基础 CRUD + MQ + ES） |
 | Phase 1 | ✅ 已完成（RabbitMQ 可靠性增强，3 个闭环） |
 | Phase 2 | ✅ 已完成（大文件分片上传、MD5 秒传、断点续传、流式合并） |
-| Phase 3 | 📋 计划中（Canal 数据一致性） |
+| Phase 3 | ✅ 已完成（代码质量加固：全局异常处理、单例 OSS、分页、55 tests） |
+| Phase 4 | ✅ 已完成（Transactional Outbox Pattern 实现 MySQL-ES 最终一致性） |
+| Phase 5 | ✅ 已完成（解析 OOM 防护：TXT 流式 + PDF/DOCX 门禁 + 20 tests） |
 
 ### 推荐顺序与理由
 
 | 优先级 | 方向 | 理由 |
 |:--|:--|:--|
-| **P0** | **Phase 3：Canal 数据一致性** | Phase 1 已保证 MQ 可靠，Phase 2 已保证上传链可靠，但 Consumer 中手动双写 MySQL + ES 仍是系统最薄弱的一环——无事务保证。Canal 监听 binlog 是最低成本的方案（不需改业务代码，仅新增 Canal Client + ES 同步服务）。面试中"MySQL ↔ ES 数据一致性"比"消息幂等"更有区分度。 |
-| P1 | **消息幂等消费表** | 改动极小（一张 `mq_consumed_record` 表 + Mapper + Consumer 中 3 行 INSERT IGNORE），但能在面试中讲出"防重复消费"的完整方案。建议与 Canal 同期或 Canal 之后立即补齐。 |
+| **P0** | **Phase 4：Transactional Outbox 数据一致性** | Phase 1 已保证 MQ 可靠，Phase 2 已保证上传链可靠。Phase 4 通过 Transactional Outbox Pattern（MySQL 事务 + outbox_event + @Scheduled ES 异步同步）解决 MySQL ↔ ES 最终一致性问题，仅依赖 MySQL 本地事务，无需额外中间件。面试中"MySQL ↔ ES 数据一致性"比"消息幂等"更有区分度。 |
+| P1 | **消息幂等消费表** | 改动极小（一张 `mq_consumed_record` 表 + Mapper + Consumer 中 3 行 INSERT IGNORE），但能在面试中讲出"防重复消费"的完整方案。建议在 Phase 4 之后补齐。 |
 | P2 | **消息发送记录表 / Outbox** | Phase 1 闭环 4 的 Confirm ack=false / Return 事件目前仅记日志。引入 `mq_sent_record` 表可以使"发送了并确认了"可查询。Outbox 模式能把 MySQL 写入和 MQ 发送绑定在同一事务中。建议在进入 RAG 之前完成。 |
-| P3 | **Phase 5：RAG / 知识库问答** | RAG 是简历中最大亮点，但需要可靠的数据基础。Canal 保证 ES 数据一致性后，文本切片写入 `text_chunk` 表也能通过 binlog 自动同步到 ES，不再手动双写。 |
+| P3 | **Backlog：RAG / 知识库问答** | RAG 是简历中最大亮点，但需要可靠的数据基础。Transactional Outbox 已保证 ES 数据一致性，文本切片写入 `text_chunk` 表也能通过 outbox_event 异步同步到 ES。 |
 
 ### 为什么不先做 RAG
 

@@ -209,7 +209,7 @@ flowchart TB
 - [x] **全局异常处理** — @RestControllerAdvice 统一拦截 Multipart/IO/Amqp/参数校验异常
 - [x] **Docker Compose** — MySQL + RabbitMQ + ES 一键启动，含 healthcheck
 - [x] **环境变量模板** — .env.example，敏感配置不入库
-- [x] **自动化测试** — 23 个测试（FileControllerTest 8 + ChunkUploadServiceTest 15）
+- [x] **自动化测试** — 55 个测试（FileControllerTest 8 + ChunkUploadServiceTest 14 + FileContentExtractorTest 20 + OutboxEventServiceTest 12 + ApplicationTest 1）
 - [x] **前端 SPA** — Vue 3 + Element Plus，统计卡片 + 上传 + 搜索 + 文件表格
 
 ---
@@ -381,9 +381,11 @@ file-processor/
 │   ├── main/resources/
 │   │   ├── application.yml                   ←   主配置（环境变量注入）
 │   │   └── static/index.html                 ←   前端 SPA
-│   └── test/                                 ← 测试（23 tests）
+│   └── test/                                 ← 测试（55 tests）
 │       ├── controller/FileControllerTest.java
-│       └── service/ChunkUploadServiceTest.java
+│       ├── service/ChunkUploadServiceTest.java
+│       ├── service/FileContentExtractorTest.java
+│       └── service/OutboxEventServiceTest.java
 └── uploads/                                  ← 临时文件目录（.gitignore 排除）
 ```
 
@@ -396,9 +398,9 @@ file-processor/
 | **Phase 0** | 基础文件上传、OSS 存储、内容提取、ES 搜索 | ✅ 已完成 |
 | **Phase 1** | RabbitMQ 可靠性增强：MANUAL ACK / DLX/DLQ / Producer Confirm / Spring Retry | ✅ 已完成 |
 | **Phase 2** | 大文件分片上传：MD5 秒传、分片上传、断点续传、分片合并 + MD5 校验 | ✅ 已完成 |
-| **Phase 3** | 代码质量加固：全局异常处理、FileTypeUtil 去重、OSS 客户端单例、文件列表分页、Docker Compose、23 个测试、文档同步 | ✅ 已完成 |
+| **Phase 3** | 代码质量加固：全局异常处理、FileTypeUtil 去重、OSS 客户端单例、文件列表分页、Docker Compose、55 个测试、文档同步 | ✅ 已完成 |
 | **Phase 4** | Transactional Outbox 数据一致性（MySQL 事务 + outbox_event + @Scheduled ES 异步同步） | ✅ 已完成 |
-| **Phase 5** | 解析内存风险控制（TXT 流式/Pdf Docx 门禁/55 tests）+ 性能报告模板 | 📋 进行中 |
+| **Phase 5** | 解析内存风险控制（TXT 流式/Pdf Docx 门禁/55 tests）+ 性能报告模板 | ✅ 已完成 |
 | **Backlog** | AI / RAG 扩展（文本切片、知识库问答、SSE、LLM、Embedding、Milvus、Reranker） | 💡 未来规划 |
 
 > 详细路线图 → [docs/roadmap.md](./docs/roadmap.md)

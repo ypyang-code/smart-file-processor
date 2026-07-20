@@ -37,9 +37,9 @@ Phase 0         Phase 1           Phase 2           Phase 3           Phase 4   
 - [x] RabbitMQ 可靠性 → **Phase 1 已完成**
 - [x] 大文件支持 → **Phase 2 已完成**
 - [x] 全局异常处理 → **Phase 3 已完成**
-- [x] 单元测试 → **Phase 3 已完成**（23 tests）
-- [ ] 数据一致性保障（Canal / 对账）→ **Phase 4 计划中**
-- [ ] 性能测试报告 → **Phase 5 计划中**
+- [x] 单元测试 → **Phase 3 已完成**（起步 23 tests，Phase 4 → 35 tests，Phase 5 → 55 tests）
+- [x] 数据一致性保障 → **Phase 4 已完成**（Transactional Outbox Pattern）
+- [x] 性能测试报告 → **Phase 5 已完成**（代码 + 模板）
 
 ---
 
@@ -96,7 +96,7 @@ Phase 0         Phase 1           Phase 2           Phase 3           Phase 4   
 - [x] **闭环 1**：全局异常处理（GlobalExceptionHandler + @RestControllerAdvice）+ FileTypeUtil 去重
 - [x] **闭环 2**：OSS 客户端单例复用（@PostConstruct/@PreDestroy）+ 文件列表分页（PageResult）
 - [x] **闭环 3**：Docker Compose 一键部署（MySQL + RabbitMQ + ES + healthcheck）+ .env.example
-- [x] **闭环 4**：测试补齐（FileControllerTest 8 + ChunkUploadServiceTest 15，共 23 tests）
+- [x] **闭环 4**：测试补齐（FileControllerTest 8 + ChunkUploadServiceTest 14，Phase 3 起步 23 tests）
 - [x] **闭环 5**：文档同步（README / roadmap / architecture / interview-notes / CHANGELOG）
 
 ### 对简历的关键提升
@@ -148,7 +148,7 @@ Phase 0         Phase 1           Phase 2           Phase 3           Phase 4   
 
 ---
 
-## Phase 5 · 文件解析内存风险控制与性能验证（📋 进行中）
+## Phase 5 · 文件解析内存风险控制与性能验证（✅ 已完成）
 
 **时间**：2026-07-16
 **目标**：为 TXT/PDF/DOCX 解析链路增加 OOM 保护，补齐损坏文件测试，提供压测模板。
@@ -205,7 +205,7 @@ Phase 0         Phase 1           Phase 2           Phase 3           Phase 4   
 2026-07-15  ████████  Phase 2 · 大文件上传 ✅
 2026-07-15  ████████  Phase 3 · 代码质量加固 ✅
 2026-07-16  ████████  Phase 4 · 数据一致性 ✅
-2026-07/08  ░░░░░░░░  Phase 5 · 性能优化 📋
+2026-07/08  ████████  Phase 5 · 性能优化 ✅
 2026-09+     ░░░░░░░░  Backlog · RAG/AI 💡
 ```
 
@@ -218,6 +218,6 @@ Phase 0         Phase 1           Phase 2           Phase 3           Phase 4   
 | 日期 | 说明 |
 |------|------|
 | 2026-07-16 | Phase 5 代码部分完成：解析 OOM 保护（TXT 流式 + PDF/DOCX 门禁 + 20 测试），55 tests |
-| 2026-07-16 | Phase 4 → ✅：Transactional Outbox Pattern 实现 MySQL-ES 最终一致性，35 tests |
+| 2026-07-16 | Phase 4 → ✅：Transactional Outbox Pattern 实现 MySQL-ES 最终一致性（35 tests） |
 | 2026-07-15 | Phase 1 → ✅、Phase 2 → ✅、Phase 3 → ✅；Phase 4 调整为 Canal 一致性；Phase 5 调整为 JVM 优化；原 AI/RAG → Backlog |
 | 2026-07-14 | 初版，Phase 0 标记已完成 |
