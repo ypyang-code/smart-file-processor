@@ -317,7 +317,9 @@ export $(grep -v '^#' .env | grep -v '^$' | xargs)
 | `GET` | `/api/search?keyword=xxx` | 全文搜索（文件名 + 内容） |
 
 > 分页响应结构：`{ code: 200, data: { list: [...], total: N, page: 1, size: 20, totalPages: M } }`
+> 
 > 分片上传详细设计 → [docs/upload-design.md](./docs/upload-design.md)
+> 
 > 分片上传测试指南 → [docs/upload-test-guide.md](./docs/upload-test-guide.md)
 
 ---
@@ -407,7 +409,9 @@ file-processor/
 | **Backlog** | AI / RAG 扩展（文本切片、知识库问答、SSE、LLM、Embedding、Milvus、Reranker） | 💡 未来规划 |
 
 > 详细路线图 → [docs/roadmap.md](./docs/roadmap.md)
+> 
 > 完整改造方案 → [docs/refactor-plan.md](./docs/refactor-plan.md)
+> 
 > RabbitMQ 可靠性工程复盘 → [docs/rabbitmq-reliability-review.md](./docs/rabbitmq-reliability-review.md)
 
 ---
